@@ -64,6 +64,8 @@ Window {
             QtPositioning.rectangle(topLeftEurope, bottomRightEurope)
 
     property variant berlin: QtPositioning.coordinate(52.5175, 13.384)
+    property variant corvallis: QtPositioning.coordinate(44.5646, -123.2620)
+    property variant albany: QtPositioning.coordinate(44.6365, -123.1059)
     property variant oslo: QtPositioning.coordinate(59.9154, 10.7425)
     property variant london: QtPositioning.coordinate(51.5, 0.1275)
     property variant destinationCoordinate: QtPositioning.coordinate(44.34, -123.17)
@@ -92,92 +94,92 @@ Window {
             onPressed: {
                 //marker.coordinate = mapOfEurope.toCoordinate(Qt.point(mouse.x, mouse.y))
                 destinationCoordinate = mapOfEurope.toCoordinate(Qt.point(mouse.x, mouse.y))
-                berlin2London.updateToCoordinate(mapOfEurope.toCoordinate((Qt.point(mouse.x, mouse.y))))
+                HydraPlane.updateToCoordinate(mapOfEurope.toCoordinate((Qt.point(mouse.x, mouse.y))))
                 cppPlane.showMessage(qsTr("Setting destination to " + destinationCoordinate))
                 console.log(destinationCoordinate)
             }
         }
 
-        Plane {
-            id: qmlPlane
-            pilotName: "QML"
-            coordinate: oslo2Berlin.position
+//        Plane {
+//            id: qmlPlane
+//            pilotName: "QML"
+//            coordinate: oslo2Berlin.position
 
-            SequentialAnimation {
-                id: qmlPlaneAnimation
-                property real rotationDirection : 0;
-                NumberAnimation {
-                    target: qmlPlane; property: "bearing"; duration: 1000
-                    easing.type: Easing.InOutQuad
-                    to: qmlPlaneAnimation.rotationDirection
-                }
-                //! [QmlPlane1]
-                CoordinateAnimation {
-                    id: coordinateAnimation; duration: 5000
-                    target: oslo2Berlin; property: "position"
-                    easing.type: Easing.InOutQuad
-                }
-                //! [QmlPlane1]
+//            SequentialAnimation {
+//                id: qmlPlaneAnimation
+//                property real rotationDirection : 0;
+//                NumberAnimation {
+//                    target: qmlPlane; property: "bearing"; duration: 1000
+//                    easing.type: Easing.InOutQuad
+//                    to: qmlPlaneAnimation.rotationDirection
+//                }
+//                //! [QmlPlane1]
+//                CoordinateAnimation {
+//                    id: coordinateAnimation; duration: 5000
+//                    target: oslo2Berlin; property: "position"
+//                    easing.type: Easing.InOutQuad
+//                }
+//                //! [QmlPlane1]
 
-                onStopped: {
-//                    if (coordinateAnimation.to === berlin)
-                        qmlPlane.showMessage(qsTr("Arriving!"))
-//                    else if (coordinateAnimation.to === oslo)
-//                        qmlPlane.showMessage(qsTr("!"))
-                }
-                onStarted: {
-//                    if (coordinateAnimation.from === oslo)
-                        qmlPlane.showMessage(qsTr("Departing!"))
-//                    else if (coordinateAnimation.from === berlin)
-//                        qmlPlane.showMessage(qsTr("See you Berlin!"))
-                }
-            }
+//                onStopped: {
+////                    if (coordinateAnimation.to === berlin)
+//                        qmlPlane.showMessage(qsTr("Arriving!"))
+////                    else if (coordinateAnimation.to === oslo)
+////                        qmlPlane.showMessage(qsTr("!"))
+//                }
+//                onStarted: {
+////                    if (coordinateAnimation.from === oslo)
+//                        qmlPlane.showMessage(qsTr("Departing!"))
+////                    else if (coordinateAnimation.from === berlin)
+////                        qmlPlane.showMessage(qsTr("See you Berlin!"))
+//                }
+//            }
 
 
 
             //! [QmlPlane2]
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if (qmlPlaneAnimation.running) {
-                        console.log("Plane still in the air.");
-                        return;
-                    }
+//            MouseArea {
+//                anchors.fill: parent
+//                onClicked: {
+//                    if (qmlPlaneAnimation.running) {
+//                        console.log("Plane still in the air.");
+//                        return;
+//                    }
 
-                    if (oslo2Berlin.position === berlin) {
-                        coordinateAnimation.from = berlin;
-                        coordinateAnimation.to = oslo;
-                    } else if (oslo2Berlin.position === oslo) {
-                        coordinateAnimation.from = oslo;
-                        coordinateAnimation.to = berlin;
-                    }
+//                    if (oslo2Berlin.position === berlin) {
+//                        coordinateAnimation.from = berlin;
+//                        coordinateAnimation.to = oslo;
+//                    } else if (oslo2Berlin.position === oslo) {
+//                        coordinateAnimation.from = oslo;
+//                        coordinateAnimation.to = berlin;
+//                    }
 
-                    qmlPlaneAnimation.rotationDirection = oslo2Berlin.position.azimuthTo(coordinateAnimation.to)
-                    qmlPlaneAnimation.start()
-                }
-            }
-            //! [QmlPlane2]
-            Component.onCompleted: {
-                oslo2Berlin.position = oslo;
-            }
-        }
+//                    qmlPlaneAnimation.rotationDirection = oslo2Berlin.position.azimuthTo(coordinateAnimation.to)
+//                    qmlPlaneAnimation.start()
+//                }
+//            }
+//            //! [QmlPlane2]
+//            Component.onCompleted: {
+//                oslo2Berlin.position = oslo;
+//            }
+//        }
 
         //! [CppPlane1]
         Plane {
             id: cppPlane
             pilotName: "Hydra"
-            coordinate: berlin2London.position
+            coordinate: HydraPlane.position
 
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    if (cppPlaneAnimation.running || berlin2London.isFlying()) {
+                    if (cppPlaneAnimation.running || HydraPlane.isFlying()) {
                         console.log("Hydra still in the air");
                         return;
                     }
 
-//                    berlin2London.swapDestinations();
-                    cppPlaneAnimation.rotationDirection = berlin2London.position.azimuthTo(berlin2London.to)
+//                    HydraPlane.swapDestinations();
+                    cppPlaneAnimation.rotationDirection = HydraPlane.position.azimuthTo(HydraPlane.to)
                     cppPlaneAnimation.start();
                     cppPlane.departed();
                 }
@@ -192,32 +194,33 @@ Window {
                     easing.type: Easing.InOutQuad
                     to: cppPlaneAnimation.rotationDirection
                 }
-                ScriptAction { script: berlin2London.startFlight() }
+                ScriptAction { script: HydraPlane.startFlight() }
             }
             //! [CppPlane3]
 
             Component.onCompleted: {
                 // happens only on the first animation
-                console.log("component.onCompleted")
-                berlin2London.position = berlin;
-                berlin2London.to = destinationCoordinate;
-                berlin2London.from = berlin;
-                berlin2London.arrived.connect(arrived)
+//                console.log("component.onCompleted")
+                HydraPlane.position = corvallis;
+//                HydraPlane.position = berlin;
+                HydraPlane.to = albany;
+                HydraPlane.from = corvallis;
+                HydraPlane.arrived.connect(arrived)
             }
 
             function arrived(){
-//                if (berlin2London.to === berlin)
+//                if (HydraPlane.to === berlin)
                 cppPlane.showMessage(qsTr("Arriving!"))
-                berlin2London.updateFromCoordinate()
+                HydraPlane.updateFromCoordinate()
 
-//                else if (berlin2London.to ===destinationCoordinate)
+//                else if (HydraPlane.to ===destinationCoordinate)
 //                    cppPlane.showMessage(qsTr("Hello destinationCoordinate!"))
             }
 
             function departed(){
-//                if (berlin2London.from === berlin)
+//                if (HydraPlane.from === berlin)
 //                    cppPlane.showMessage(qsTr("See you Berlin!"))
-//                else if (berlin2London.from ===destinationCoordinate)
+//                else if (HydraPlane.from ===destinationCoordinate)
                     cppPlane.showMessage(qsTr("Departing!"))
             }
         //! [CppPlane2]
@@ -247,6 +250,11 @@ Window {
             interval: 5000; running: true; repeat: false;
             onTriggered: fadeOut.start()
         }
+        Timer{
+            interval: 1500; running: true; repeat: true;
+            onTriggered: HydraPlane.updateCurrentLocation()
+        }
+
 
         NumberAnimation {
             id: fadeOut; target: infoBox;

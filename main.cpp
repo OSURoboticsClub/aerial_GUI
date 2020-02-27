@@ -59,8 +59,17 @@
 #include <QGeoCoordinate>
 #include <QtPositioning/private/qwebmercator_p.h>
 #include <QPointF>
+//#include <QTcpSocket>
+#include <QInputDialog>
+#include <QtWidgets>
 
-#define ANIMATION_DURATION 4000
+#include "chatclient.hpp"
+
+
+#define ANIMATION_DURATION 500
+
+
+
 
 //! [PlaneController1]
 class PlaneController: public QObject
@@ -78,6 +87,13 @@ public:
     {
         easingCurve.setType(QEasingCurve::InOutQuad);
         easingCurve.setPeriod(ANIMATION_DURATION);
+    }
+    ~PlaneController(){
+        close(socketFD);
+    }
+
+    void setSocketFD(int socketFD){
+        this->socketFD = socketFD;
     }
 
     void setFrom(const QGeoCoordinate& from)
@@ -146,6 +162,22 @@ public slots:
     void updateFromCoordinate(){
         fromCoordinate = toCoordinate;
     }
+    void updateCurrentLocation() {
+        char buffer[100];
+        memset(buffer, '\0', sizeof(buffer));
+        // request latitude from drone
+        send(socketFD, "latitude", 8, 0);
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        double latitude = atof(buffer);
+        memset(buffer, '\0', sizeof(buffer));
+        // request longitude from drone
+        send(socketFD, "longitude", 9, 0);
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        double longitude = atof(buffer);
+        QGeoCoordinate current_location(latitude, longitude);
+        updateToCoordinate(current_location);
+//        updatePosition();
+    }
 
 signals:
     void positionChanged();
@@ -186,7 +218,10 @@ private:
         if (!timer.isActive())
             emit arrived();
     }
+
+
     //! [C++Pilot3]
+
 
 private:
     QGeoCoordinate currentPosition;
@@ -194,6 +229,8 @@ private:
     QBasicTimer timer;
     QTime startTime, finishTime;
     QEasingCurve easingCurve;
+    int socketFD;
+
 //! [PlaneController2]
     // ...
 };
@@ -204,12 +241,69 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    PlaneController oslo2berlin;
-    PlaneController berlin2london;
+
+//    PlaneController oslo2berlin;
+
+    PlaneController HydraPlane;
+
+    // Connecting to server
+    int socketFD, portNumber, charsWritten, charsRead;
+    struct sockaddr_in serverAddress;
+    char buffer[BUFFER_SIZE];
+    char buffer2[BUFFER_SIZE];
+    memset(buffer, '\0', sizeof(buffer));
+    memset(buffer2, '\0', sizeof(buffer2));
+    char hostname[] = "localhost";
+    char portNumberString[] = "5000";
+    char s[INET6_ADDRSTRLEN];
+    int status;
+    struct addrinfo hints;
+    struct addrinfo *servinfo, *p;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET; // IPv4
+    hints.ai_socktype = SOCK_STREAM; // fill in the IP for me
+    if ((status = getaddrinfo(hostname, portNumberString, &hints, &servinfo)) != 0){
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+        exit(1);
+    }
+    // loop through all the results and connect to the first we can
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        // creates socket (taken from Beej's guide)
+        if ((socketFD = socket(p->ai_family, p->ai_socktype,
+                               p->ai_protocol)) == -1) {
+            perror("client: socket");
+            continue;
+        }
+        // establishes connection to server (taken form Beej's guide)
+        if (connect(socketFD, p->ai_addr, p->ai_addrlen) == -1) {
+            close(socketFD);
+            perror("client: connect");
+            continue;
+        }
+        break;
+    }
+    bool connection_status = true;
+    if (p == NULL) {
+        fprintf(stderr, "client: failed to connect\n");
+        connection_status = false;
+//        return 2;
+    }
+    if (connection_status == true){
+        // gets the IP address of the hostname and prints it
+        inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
+        printf("client: connecting to %s\n", s);
+        freeaddrinfo(servinfo);
+        send(socketFD, "latitude", 8, 0);
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        printf("%s", buffer);
+    }
+    HydraPlane.setSocketFD(socketFD);
+
+
 
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("oslo2Berlin", &oslo2berlin);
-    engine.rootContext()->setContextProperty("berlin2London", &berlin2london);
+//    engine.rootContext()->setContextProperty("oslo2Berlin", &oslo2berlin);
+    engine.rootContext()->setContextProperty("HydraPlane", &HydraPlane);
     engine.load(QUrl(QStringLiteral("qrc:/planespotter.qml")));
 
     return app.exec();

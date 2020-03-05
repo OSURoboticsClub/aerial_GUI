@@ -210,7 +210,7 @@ Window {
 
             function arrived(){
 //                if (HydraPlane.to === berlin)
-                cppPlane.showMessage(qsTr("Arriving!"))
+//                cppPlane.showMessage(qsTr("Arriving!"))
                 HydraPlane.updateFromCoordinate()
 
 //                else if (HydraPlane.to ===destinationCoordinate)
@@ -250,10 +250,10 @@ Window {
             interval: 5000; running: true; repeat: false;
             onTriggered: fadeOut.start()
         }
-        Timer{
-            interval: 1500; running: true; repeat: true;
-            onTriggered: HydraPlane.updateCurrentLocation()
-        }
+//        Timer{
+//            interval: 1500; running: true; repeat: true;
+//            onTriggered: HydraPlane.updateCurrentLocation()
+//        }
 
 
         NumberAnimation {

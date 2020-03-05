@@ -68,13 +68,50 @@
 
 #define ANIMATION_DURATION 500
 
+class Worker : public QObject
+{
+    Q_OBJECT
 
+public slots:
+    void doWork(const int socketFD) {
+        sleep(2);
+        QGeoCoordinate newCoord;
+
+        /* ... here is the expensive or blocking operation ... */
+        qDebug() << "Thread: requesting current location from server";
+        char buffer[100];
+        memset(buffer, '\0', sizeof(buffer));
+        // request latitude from drone
+        send(socketFD, "latitude", 8, 0);
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        double latitude = atof(buffer);
+        memset(buffer, '\0', sizeof(buffer));
+        // request longitude from drone
+        send(socketFD, "longitude", 9, 0);
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        double longitude = atof(buffer);
+        QGeoCoordinate current_location(latitude, longitude);
+        qDebug() << "Thread: sending location to master";
+
+        emit resultReady(current_location);
+
+    }
+//    void setSocketFD(int socketFD){
+//        this->socketFD = socketFD;
+//    }
+private:
+//    int socketFD;
+
+signals:
+    void resultReady(const QGeoCoordinate &result);
+};
 
 
 //! [PlaneController1]
 class PlaneController: public QObject
 {
     Q_OBJECT
+    QThread workerThread;
     Q_PROPERTY(QGeoCoordinate position READ position WRITE setPosition NOTIFY positionChanged)
 //! [PlaneController1]
     //! [C++Pilot1]
@@ -87,13 +124,28 @@ public:
     {
         easingCurve.setType(QEasingCurve::InOutQuad);
         easingCurve.setPeriod(ANIMATION_DURATION);
+
     }
     ~PlaneController(){
+        workerThread.quit();
+        workerThread.wait();
         close(socketFD);
+    }
+
+    void start_client_thread(){
+        this->worker = new Worker;
+        worker->moveToThread(&workerThread);
+        connect(&workerThread, &QThread::finished, worker, &QObject::deleteLater);
+        connect(this, &PlaneController::operate, worker, &Worker::doWork);
+        // remember update position has an animation gotta get rid of
+        connect(worker, &Worker::resultReady, this, &PlaneController::updatedCoordinatesSlot);
+        workerThread.start();
     }
 
     void setSocketFD(int socketFD){
         this->socketFD = socketFD;
+//        this->worker->setSocketFD(socketFD);
+
     }
 
     void setFrom(const QGeoCoordinate& from)
@@ -146,6 +198,11 @@ public slots:
         timer.start(15, this);
         emit departed();
     }
+    void updatedCoordinatesSlot(const QGeoCoordinate newCoord){
+        updateToCoordinate(newCoord);
+        updatePosition();
+        operate(socketFD);
+    }
 //! [C++Pilot2]
 
     void swapDestinations() {
@@ -186,6 +243,9 @@ signals:
     void toChanged();
     void fromChanged();
 
+    // start thread signal
+    void operate(int socketFD);
+
 protected:
     void timerEvent(QTimerEvent *event) override
     {
@@ -200,6 +260,7 @@ protected:
 
 private:
     //! [C++Pilot3]
+    Worker *worker;
     void updatePosition()
     {
         // simple progress animation
@@ -214,7 +275,6 @@ private:
 
         setPosition(QWebMercator::coordinateInterpolation(
                           fromCoordinate, toCoordinate, easingCurve.valueForProgress(progress)));
-
         if (!timer.isActive())
             emit arrived();
     }
@@ -247,8 +307,8 @@ int main(int argc, char *argv[])
     PlaneController HydraPlane;
 
     // Connecting to server
-    int socketFD, portNumber, charsWritten, charsRead;
-    struct sockaddr_in serverAddress;
+    int socketFD;
+//    struct sockaddr_in serverAddress;
     char buffer[BUFFER_SIZE];
     char buffer2[BUFFER_SIZE];
     memset(buffer, '\0', sizeof(buffer));
@@ -296,8 +356,11 @@ int main(int argc, char *argv[])
         send(socketFD, "latitude", 8, 0);
         recv(socketFD, buffer, sizeof(buffer), 0);
         printf("%s", buffer);
+        HydraPlane.start_client_thread();
+        HydraPlane.setSocketFD(socketFD);
+        HydraPlane.operate(socketFD);
     }
-    HydraPlane.setSocketFD(socketFD);
+
 
 
 

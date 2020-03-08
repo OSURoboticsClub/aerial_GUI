@@ -349,6 +349,13 @@ ApplicationWindow {
             console.log("battery:")
             console.log(HydraPlane.batteryVoltage())
             voltageGauge.value = HydraPlane.batteryVoltage()
+            if (HydraPlane.isArmed() == 0){
+                statusIndicator.color = "red"
+            }
+            else if(HydraPlane.isArmed() == 1){
+                statusIndicator.color = "green"
+            }
+
         }
     }
 
@@ -454,14 +461,6 @@ ApplicationWindow {
             font.pixelSize: 14
         }
     }
-
-//    statusBar: StatusBar {
-//            RowLayout {
-//                anchors.fill: parent
-//                Label { text: "Read Only" }
-//            }
-//        }
-
 
 
 

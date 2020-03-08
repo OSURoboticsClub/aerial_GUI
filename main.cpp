@@ -75,7 +75,7 @@ class Worker : public QObject
 
 public slots:
     void doWork(const int socketFD) {
-        sleep(2);
+        sleep(1);
         QGeoCoordinate newCoord;
         // ***************** Getting Current Position **********************
         qDebug() << "Thread: requesting current location from server";
@@ -111,11 +111,23 @@ public slots:
         send(socketFD, "is_armed", 8, 0);
         memset(buffer, '\0', sizeof(buffer));
         recv(socketFD, buffer, sizeof(buffer), 0);
+
+        int is_armed;
         qDebug() << buffer;
+        if (buffer[0] == 'F'){
+            qDebug() << "disarmed";
+            is_armed = 0;
+        }
+        else {
+            is_armed = 1;
+        }
+        qDebug() << "is armed:";
+        qDebug() << is_armed;
+
 
         qDebug() << "Thread: sending location to master";
 
-        emit resultReady(current_location, altitude, battery);
+        emit resultReady(current_location, altitude, battery, is_armed);
 
     }
 //    void setSocketFD(int socketFD){
@@ -125,7 +137,7 @@ private:
 //    int socketFD;
 
 signals:
-    void resultReady(const QGeoCoordinate &result, const double &alt, const double &batt);
+    void resultReady(const QGeoCoordinate &result, const double &alt, const double &batt, const int &is_armed);
 };
 
 
@@ -149,6 +161,7 @@ public:
         easingCurve.setPeriod(ANIMATION_DURATION);
         this->currentAltitude = 0;
         this->batteryVolt = 13.2;
+        this->is_armed = false;
 
     }
     ~PlaneController(){
@@ -218,15 +231,15 @@ public:
     }
     Q_INVOKABLE void arm(){
         send(socketFD, "arm", 3, 0);
-//        char buffer[10];
-//        memset(buffer, '\0', sizeof(buffer));
-//        recv(socketFD, buffer, sizeof(buffer), 0);
     }
     Q_INVOKABLE void disarm(){
         send(socketFD, "disarm", 6, 0);
     }
     Q_INVOKABLE void kill(){
         send(socketFD, "kill", 4, 0);
+    }
+    Q_INVOKABLE bool isArmed() const{
+        return is_armed;
     }
 
 //! [C++Pilot2]
@@ -242,7 +255,8 @@ public slots:
         timer.start(15, this);
         emit departed();
     }
-    void updatedCoordinatesSlot(const QGeoCoordinate newCoord, double newAltitude, double newBattery){
+    void updatedCoordinatesSlot(const QGeoCoordinate newCoord, double newAltitude, double newBattery, int is_armed){
+        updateIsArmed(is_armed);
         updateToCoordinate(newCoord);
         updatePosition();
         updateAltitude(newAltitude);
@@ -256,6 +270,15 @@ public slots:
             // swap destinations
             toCoordinate = fromCoordinate;
             fromCoordinate = currentPosition;
+        }
+    }
+
+    void updateIsArmed(int is_armed){
+        if (is_armed == false){
+            this->is_armed = false;
+        }
+        else {
+            this->is_armed = true;
         }
     }
 
@@ -323,6 +346,7 @@ private:
 
 
 private:
+    int is_armed;
     double currentAltitude;
     double batteryVolt;
     QGeoCoordinate currentPosition;

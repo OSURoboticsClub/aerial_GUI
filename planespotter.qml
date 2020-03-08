@@ -52,16 +52,31 @@ import QtQuick 2.4
 import QtQuick.Window 2.2
 import QtPositioning 5.5
 import QtLocation 5.6
+import QtQuick.Controls 1.6
+import QtQuick.Extras 1.4
+import QtWebEngine.Controls1Delegates 1.0
+import QtQuick.Layouts 1.3
+import Qt.labs.calendar 1.0
+import QtGraphicalEffects 1.0
+import QtQuick.Controls.Styles.Desktop 1.0
+import QtQuick.Dialogs.qml 1.0
+import QtTest 1.2
+import QtQuick.Layouts 1.0
 
-Window {
-    width: 700
+ApplicationWindow {
+    id: window
+    width: 1000
     height: 500
     visible: true
 
     property variant topLeftEurope: QtPositioning.coordinate(60.5, 0.0)
     property variant bottomRightEurope: QtPositioning.coordinate(51.0, 14.0)
+    property variant topLeftCorvallis: QtPositioning.coordinate(44.599480, -123.326150)
+    property variant bottomRightCorvallis: QtPositioning.coordinate(44.552963, -123.221276)
+    property variant viewOfCorvallis:
+        QtPositioning.rectangle(topLeftCorvallis, bottomRightCorvallis)
     property variant viewOfEurope:
-            QtPositioning.rectangle(topLeftEurope, bottomRightEurope)
+        QtPositioning.rectangle(topLeftEurope, bottomRightEurope)
 
     property variant berlin: QtPositioning.coordinate(52.5175, 13.384)
     property variant corvallis: QtPositioning.coordinate(44.5646, -123.2620)
@@ -70,198 +85,392 @@ Window {
     property variant london: QtPositioning.coordinate(51.5, 0.1275)
     property variant destinationCoordinate: QtPositioning.coordinate(44.34, -123.17)
 
+    Rectangle {
+        id: rightRectangle
+        color: "#2e3436"
+        anchors.top: parent.top
+        anchors.topMargin: 0
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 0
+        anchors.left: parent.left
+        anchors.leftMargin: 916
+        anchors.right: parent.right
+        anchors.rightMargin: 0
 
-    Map {
-        id: mapOfEurope
-        anchors.centerIn: parent;
-        anchors.fill: parent
-        plugin: Plugin {
-            name: "esri" // "mapboxgl", "esri", osm...
+        Text {
+            id: element4
+            x: 4
+            y: 259
+            width: 80
+            height: 16
+            color: "#ffffff"
+            text: qsTr("Set Altitude")
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 225
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
         }
-        MapQuickItem {
-            id: marker
-            anchorPoint.x: imageMarker.width/2
-            anchorPoint.y: imageMarker.height
-            coordinate: destinationCoordinate
 
-            sourceItem: Image {
-                id: imageMarker
-                source: "marker.png"
-            }
+        Button {
+            id: resetAltitudeButton
+            x: 8
+            y: 468
+            width: 68
+            height: 27
+            text: qsTr("Reset")
         }
-        MouseArea {
+
+        Text {
+            id: altitudeDisplay
+            x: 29
+            width: 81
+            height: 22
+            color: "#ffffff"
+            fontSizeMode: Text.FixedSize
+            anchors.right: parent.right
+            anchors.rightMargin: -1
+            anchors.top: parent.top
+            anchors.topMargin: 18
+            verticalAlignment: Text.AlignTop
+            textFormat: Text.AutoText
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            //            property string altitude: "Altitude: " + HydraPlane.altitude
+            font.pixelSize: 14
+        }
+
+
+        Text {
+            id: element1
+            x: 35
+            width: 67
+            height: 19
+            color: "#ffffff"
+            text: qsTr("Altitude")
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.top: parent.top
+            anchors.topMargin: 0
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+        }
+
+
+        Text {
+            id: element2
+            x: 41
+            width: 54
+            height: 23
+            color: "#ffffff"
+            text: qsTr("Voltage")
+            anchors.top: parent.top
+            anchors.topMargin: 46
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: 14
+        }
+
+        Gauge {
+            id: voltageGauge
+            x: 47
+            width: 54
+            height: 185
+            value: 13.2
+            anchors.top: parent.top
+            anchors.topMargin: 67
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            minimumValue: 9.5
+            maximumValue: 14
+            tickmarkStepSize: 0.5
+        }
+
+        Button {
+            id: setAltitudeButton
+            x: 8
+            y: 435
+            width: 68
+            height: 28
+            text: qsTr("Set")
+        }
+
+        Slider {
+            id: setAltitudeBar
+            x: 33
+            y: 303
+            width: 22
+            height: 89
+            orientation: Qt.Vertical
+        }
+
+        TextField {
+            id: enterAltitudeField
+            x: 8
+            y: 403
+            width: 68
+            height: 26
+            placeholderText: qsTr("Text Field")
+        }
+
+        Text {
+            id: setAltitudeValue
+            x: 8
+            y: 281
+            width: 68
+            height: 16
+            color: "#ffffff"
+            text: qsTr("0m")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+        }
+
+
+
+    }
+    Rectangle {
+        id: mapRectangle
+        color: "#ffffff"
+        anchors.top: parent.top
+        anchors.topMargin: 42
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 58
+        anchors.right: parent.right
+        anchors.rightMargin: 84
+        anchors.left: parent.left
+        anchors.leftMargin: 0
+
+        Map {
+            id: mapOfEurope
+            anchors.rightMargin: 0
+            anchors.bottomMargin: 0
+            anchors.centerIn: parent;
             anchors.fill: parent
-            onPressed: {
-                //marker.coordinate = mapOfEurope.toCoordinate(Qt.point(mouse.x, mouse.y))
-                destinationCoordinate = mapOfEurope.toCoordinate(Qt.point(mouse.x, mouse.y))
-                HydraPlane.updateToCoordinate(mapOfEurope.toCoordinate((Qt.point(mouse.x, mouse.y))))
-                cppPlane.showMessage(qsTr("Setting destination to " + destinationCoordinate))
-                console.log(destinationCoordinate)
+            plugin: Plugin {
+                name: "esri" // "mapboxgl", "esri", osm...
             }
-        }
+            MapQuickItem {
+                id: marker
+                anchorPoint.x: imageMarker.width/2
+                anchorPoint.y: imageMarker.height
+                coordinate: corvallis
 
-//        Plane {
-//            id: qmlPlane
-//            pilotName: "QML"
-//            coordinate: oslo2Berlin.position
-
-//            SequentialAnimation {
-//                id: qmlPlaneAnimation
-//                property real rotationDirection : 0;
-//                NumberAnimation {
-//                    target: qmlPlane; property: "bearing"; duration: 1000
-//                    easing.type: Easing.InOutQuad
-//                    to: qmlPlaneAnimation.rotationDirection
-//                }
-//                //! [QmlPlane1]
-//                CoordinateAnimation {
-//                    id: coordinateAnimation; duration: 5000
-//                    target: oslo2Berlin; property: "position"
-//                    easing.type: Easing.InOutQuad
-//                }
-//                //! [QmlPlane1]
-
-//                onStopped: {
-////                    if (coordinateAnimation.to === berlin)
-//                        qmlPlane.showMessage(qsTr("Arriving!"))
-////                    else if (coordinateAnimation.to === oslo)
-////                        qmlPlane.showMessage(qsTr("!"))
-//                }
-//                onStarted: {
-////                    if (coordinateAnimation.from === oslo)
-//                        qmlPlane.showMessage(qsTr("Departing!"))
-////                    else if (coordinateAnimation.from === berlin)
-////                        qmlPlane.showMessage(qsTr("See you Berlin!"))
-//                }
-//            }
-
-
-
-            //! [QmlPlane2]
-//            MouseArea {
-//                anchors.fill: parent
-//                onClicked: {
-//                    if (qmlPlaneAnimation.running) {
-//                        console.log("Plane still in the air.");
-//                        return;
-//                    }
-
-//                    if (oslo2Berlin.position === berlin) {
-//                        coordinateAnimation.from = berlin;
-//                        coordinateAnimation.to = oslo;
-//                    } else if (oslo2Berlin.position === oslo) {
-//                        coordinateAnimation.from = oslo;
-//                        coordinateAnimation.to = berlin;
-//                    }
-
-//                    qmlPlaneAnimation.rotationDirection = oslo2Berlin.position.azimuthTo(coordinateAnimation.to)
-//                    qmlPlaneAnimation.start()
-//                }
-//            }
-//            //! [QmlPlane2]
-//            Component.onCompleted: {
-//                oslo2Berlin.position = oslo;
-//            }
-//        }
-
-        //! [CppPlane1]
-        Plane {
-            id: cppPlane
-            pilotName: "Hydra"
-            coordinate: HydraPlane.position
-
+                sourceItem: Image {
+                    id: imageMarker
+                    source: "marker.png"
+                }
+            }
             MouseArea {
                 anchors.fill: parent
-                onClicked: {
-                    if (cppPlaneAnimation.running || HydraPlane.isFlying()) {
-                        console.log("Hydra still in the air");
-                        return;
+                onPressed: {
+                    //marker.coordinate = mapOfEurope.toCoordinate(Qt.point(mouse.x, mouse.y))
+                    destinationCoordinate = mapOfEurope.toCoordinate(Qt.point(mouse.x, mouse.y))
+                    HydraPlane.updateToCoordinate(mapOfEurope.toCoordinate((Qt.point(mouse.x, mouse.y))))
+                    cppPlane.showMessage(qsTr("Setting destination to " + destinationCoordinate))
+                    console.log(destinationCoordinate)
+                }
+            }
+
+            //! [CppPlane1]
+            Plane {
+                id: cppPlane
+                pilotName: "Hydra"
+                coordinate: HydraPlane.position
+
+                MouseArea {
+                    onClicked: {
+                        if (cppPlaneAnimation.running || HydraPlane.isFlying()) {
+                            console.log("Hydra still in the air");
+                            return;
+                        }
+
+                        //                    HydraPlane.swapDestinations();
+                        cppPlaneAnimation.rotationDirection = HydraPlane.position.azimuthTo(HydraPlane.to)
+                        cppPlaneAnimation.start();
+                        cppPlane.departed();
                     }
-
-//                    HydraPlane.swapDestinations();
-                    cppPlaneAnimation.rotationDirection = HydraPlane.position.azimuthTo(HydraPlane.to)
-                    cppPlaneAnimation.start();
-                    cppPlane.departed();
                 }
-            }
-        //! [CppPlane1]
-            //! [CppPlane3]
-            SequentialAnimation {
-                id: cppPlaneAnimation
-                property real rotationDirection : 0;
-                NumberAnimation {
-                    target: cppPlane; property: "bearing"; duration: 1000
-                    easing.type: Easing.InOutQuad
-                    to: cppPlaneAnimation.rotationDirection
+                //! [CppPlane1]
+                //! [CppPlane3]
+                SequentialAnimation {
+                    id: cppPlaneAnimation
+                    property real rotationDirection : 0;
+                    NumberAnimation {
+                        target: cppPlane; property: "bearing"; duration: 1000
+                        easing.type: Easing.InOutQuad
+                        to: cppPlaneAnimation.rotationDirection
+                    }
+                    ScriptAction { script: HydraPlane.startFlight() }
                 }
-                ScriptAction { script: HydraPlane.startFlight() }
-            }
-            //! [CppPlane3]
+                //! [CppPlane3]
 
-            Component.onCompleted: {
-                // happens only on the first animation
-//                console.log("component.onCompleted")
-                HydraPlane.position = corvallis;
-//                HydraPlane.position = berlin;
-                HydraPlane.to = albany;
-                HydraPlane.from = corvallis;
-                HydraPlane.arrived.connect(arrived)
-            }
+                Component.onCompleted: {
+                    // happens only on the first animation
+                    //                console.log("component.onCompleted")
+                    HydraPlane.position = corvallis;
+                    //                HydraPlane.position = berlin;
+                    HydraPlane.to = albany;
+                    HydraPlane.from = corvallis;
+                    HydraPlane.arrived.connect(arrived)
+                }
 
-            function arrived(){
-//                if (HydraPlane.to === berlin)
-//                cppPlane.showMessage(qsTr("Arriving!"))
-                HydraPlane.updateFromCoordinate()
+                function arrived(){
+                    //                if (HydraPlane.to === berlin)
+                    //                cppPlane.showMessage(qsTr("Arriving!"))
+                    HydraPlane.updateFromCoordinate()
 
-//                else if (HydraPlane.to ===destinationCoordinate)
-//                    cppPlane.showMessage(qsTr("Hello destinationCoordinate!"))
-            }
+                    //                else if (HydraPlane.to ===destinationCoordinate)
+                    //                    cppPlane.showMessage(qsTr("Hello destinationCoordinate!"))
+                }
 
-            function departed(){
-//                if (HydraPlane.from === berlin)
-//                    cppPlane.showMessage(qsTr("See you Berlin!"))
-//                else if (HydraPlane.from ===destinationCoordinate)
+                function departed(){
+                    //                if (HydraPlane.from === berlin)
+                    //                    cppPlane.showMessage(qsTr("See you Berlin!"))
+                    //                else if (HydraPlane.from ===destinationCoordinate)
                     cppPlane.showMessage(qsTr("Departing!"))
+                }
+                //! [CppPlane2]
             }
-        //! [CppPlane2]
+
+
+            //! [CppPlane2]
+
+            visibleRegion: viewOfCorvallis
         }
+    }
 
-
-        //! [CppPlane2]
-
-        visibleRegion: viewOfEurope
+    Timer {
+        interval: 1000; running: true; repeat: true;
+        onTriggered: {
+            console.log(HydraPlane.altitude())
+            altitudeDisplay.text = HydraPlane.altitude() + " meters"
+            console.log("battery:")
+            console.log(HydraPlane.batteryVoltage())
+            voltageGauge.value = HydraPlane.batteryVoltage()
+        }
     }
 
     Rectangle {
-        id: infoBox
-        anchors.centerIn: parent
-        color: "white"
-        border.width: 1
-        width: text.width * 1.3
-        height: text.height * 1.3
-        radius: 5
-        Text {
-            id: text
-            anchors.centerIn: parent
-            text: qsTr("Hit the plane to start the flight!")
+        id: bottomRectangle
+        y: 443
+        height: 57
+        color: "#2e3436"
+        anchors.right: parent.right
+        anchors.rightMargin: 84
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 0
+        anchors.left: parent.left
+        anchors.leftMargin: 0
+
+        Button {
+            id: takeoffButton
+            x: 17
+            y: 15
+            text: qsTr("Takeoff")
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
         }
 
-        Timer {
-            interval: 5000; running: true; repeat: false;
-            onTriggered: fadeOut.start()
+        Button {
+            id: landButton
+            x: 115
+            y: 15
+            text: qsTr("Land")
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
         }
-//        Timer{
-//            interval: 1500; running: true; repeat: true;
-//            onTriggered: HydraPlane.updateCurrentLocation()
+
+        Button {
+            id: armButton
+            x: 212
+            y: 15
+            text: qsTr("Arm")
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
+            onClicked: HydraPlane.arm()
+        }
+
+        Button {
+            id: disarmButton
+            x: 310
+            y: 15
+            text: qsTr("Disarm")
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
+            onClicked: HydraPlane.disarm()
+        }
+
+        Button {
+            id: killButton
+            x: 404
+            y: 15
+            text: qsTr("Kill")
+            onClicked: HydraPlane.kill()
+
+        }
+
+        Button {
+            id: returnHomeButton
+            x: 500
+            y: 15
+            text: qsTr("Return Home")
+        }
+    }
+
+    Rectangle {
+        id: topRectangle
+        height: 41
+        color: "#2e3436"
+        anchors.right: parent.right
+        anchors.rightMargin: 84
+        anchors.left: parent.left
+        anchors.leftMargin: 0
+        anchors.top: parent.top
+        anchors.topMargin: 0
+
+        StatusIndicator {
+            id: statusIndicator
+            x: 70
+            y: 0
+            color: "#008000"
+            active: true
+        }
+
+        Text {
+            id: element
+            x: 0
+            y: 12
+            width: 75
+            height: 21
+            color: "#ffffff"
+            text: qsTr("ARMED")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+        }
+    }
+
+//    statusBar: StatusBar {
+//            RowLayout {
+//                anchors.fill: parent
+//                Label { text: "Read Only" }
+//            }
 //        }
 
 
-        NumberAnimation {
-            id: fadeOut; target: infoBox;
-            property: "opacity";
-            to: 0.0;
-            duration: 200
-            easing.type: Easing.InOutQuad
-        }
-    }
+
+
 }
+
+
+
+/*##^##
+Designer {
+    D{i:32;anchors_x:105}D{i:31;anchors_height:54;anchors_width:916;anchors_x:0;anchors_y:0}
+}
+##^##*/

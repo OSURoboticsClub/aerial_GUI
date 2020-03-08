@@ -12,3 +12,5 @@ INSTALLS += target
 HEADERS += \
     chatclient.hpp
 
+FORMS +=
+

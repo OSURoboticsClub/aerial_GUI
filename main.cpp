@@ -62,7 +62,8 @@
 //#include <QTcpSocket>
 #include <QInputDialog>
 #include <QtWidgets>
-
+#include <iostream>
+#include <iomanip>
 #include "chatclient.hpp"
 
 
@@ -76,8 +77,7 @@ public slots:
     void doWork(const int socketFD) {
         sleep(2);
         QGeoCoordinate newCoord;
-
-        /* ... here is the expensive or blocking operation ... */
+        // ***************** Getting Current Position **********************
         qDebug() << "Thread: requesting current location from server";
         char buffer[100];
         memset(buffer, '\0', sizeof(buffer));
@@ -91,9 +91,31 @@ public slots:
         recv(socketFD, buffer, sizeof(buffer), 0);
         double longitude = atof(buffer);
         QGeoCoordinate current_location(latitude, longitude);
+
+        // ****************** Getting Battery Status ***********************
+        // request altitude from drone
+        send(socketFD, "altitude", 8, 0);
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        // cuts string at 5th char
+        buffer[5] = '\0';
+
+        // ****************** Getting Altitude *****************************
+//        std::cout << "Thread: altitude: %" << std::endl;
+        double altitude = atof(buffer);
+        send(socketFD, "battery", 7, 0);
+        memset(buffer, '\0', sizeof(buffer));
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        double battery = atof(buffer);
+
+        // ****************** Getting Armed/Disarmed Status *****************
+        send(socketFD, "is_armed", 8, 0);
+        memset(buffer, '\0', sizeof(buffer));
+        recv(socketFD, buffer, sizeof(buffer), 0);
+        qDebug() << buffer;
+
         qDebug() << "Thread: sending location to master";
 
-        emit resultReady(current_location);
+        emit resultReady(current_location, altitude, battery);
 
     }
 //    void setSocketFD(int socketFD){
@@ -103,7 +125,7 @@ private:
 //    int socketFD;
 
 signals:
-    void resultReady(const QGeoCoordinate &result);
+    void resultReady(const QGeoCoordinate &result, const double &alt, const double &batt);
 };
 
 
@@ -117,6 +139,7 @@ class PlaneController: public QObject
     //! [C++Pilot1]
     Q_PROPERTY(QGeoCoordinate from READ from WRITE setFrom NOTIFY fromChanged)
     Q_PROPERTY(QGeoCoordinate to READ to WRITE setTo NOTIFY toChanged)
+
     //! [C++Pilot1]
 
 public:
@@ -124,6 +147,8 @@ public:
     {
         easingCurve.setType(QEasingCurve::InOutQuad);
         easingCurve.setPeriod(ANIMATION_DURATION);
+        this->currentAltitude = 0;
+        this->batteryVolt = 13.2;
 
     }
     ~PlaneController(){
@@ -180,9 +205,28 @@ public:
     {
         return currentPosition;
     }
+    Q_INVOKABLE double altitude() const{
+        return currentAltitude;
+    }
+
+    Q_INVOKABLE double batteryVoltage() const{
+        return batteryVolt;
+    }
 
     Q_INVOKABLE bool isFlying() const {
         return timer.isActive();
+    }
+    Q_INVOKABLE void arm(){
+        send(socketFD, "arm", 3, 0);
+//        char buffer[10];
+//        memset(buffer, '\0', sizeof(buffer));
+//        recv(socketFD, buffer, sizeof(buffer), 0);
+    }
+    Q_INVOKABLE void disarm(){
+        send(socketFD, "disarm", 6, 0);
+    }
+    Q_INVOKABLE void kill(){
+        send(socketFD, "kill", 4, 0);
     }
 
 //! [C++Pilot2]
@@ -198,9 +242,11 @@ public slots:
         timer.start(15, this);
         emit departed();
     }
-    void updatedCoordinatesSlot(const QGeoCoordinate newCoord){
+    void updatedCoordinatesSlot(const QGeoCoordinate newCoord, double newAltitude, double newBattery){
         updateToCoordinate(newCoord);
         updatePosition();
+        updateAltitude(newAltitude);
+        updateBattery(newBattery);
         operate(socketFD);
     }
 //! [C++Pilot2]
@@ -219,21 +265,14 @@ public slots:
     void updateFromCoordinate(){
         fromCoordinate = toCoordinate;
     }
+    void updateAltitude(double altitude){
+        currentAltitude = altitude;
+    }
+    void updateBattery(double battery){
+        batteryVolt = battery;
+    }
     void updateCurrentLocation() {
-        char buffer[100];
-        memset(buffer, '\0', sizeof(buffer));
-        // request latitude from drone
-        send(socketFD, "latitude", 8, 0);
-        recv(socketFD, buffer, sizeof(buffer), 0);
-        double latitude = atof(buffer);
-        memset(buffer, '\0', sizeof(buffer));
-        // request longitude from drone
-        send(socketFD, "longitude", 9, 0);
-        recv(socketFD, buffer, sizeof(buffer), 0);
-        double longitude = atof(buffer);
-        QGeoCoordinate current_location(latitude, longitude);
-        updateToCoordinate(current_location);
-//        updatePosition();
+
     }
 
 signals:
@@ -284,6 +323,8 @@ private:
 
 
 private:
+    double currentAltitude;
+    double batteryVolt;
     QGeoCoordinate currentPosition;
     QGeoCoordinate fromCoordinate, toCoordinate;
     QBasicTimer timer;

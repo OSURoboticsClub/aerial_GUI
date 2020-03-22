@@ -62,6 +62,7 @@ import QtQuick.Controls.Styles.Desktop 1.0
 import QtQuick.Dialogs.qml 1.0
 import QtTest 1.2
 import QtQuick.Layouts 1.0
+import QtQuick.Dialogs 1.2
 
 ApplicationWindow {
     id: window
@@ -87,26 +88,24 @@ ApplicationWindow {
 
     Rectangle {
         id: rightRectangle
+        x: 916
+        width: 84
         color: "#2e3436"
-        anchors.top: parent.top
-        anchors.topMargin: 0
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0
-        anchors.left: parent.left
-        anchors.leftMargin: 916
         anchors.right: parent.right
-        anchors.rightMargin: 0
+        anchors.bottom: parent.bottom
+        anchors.top: parent.top
 
         Text {
             id: element4
             x: 4
-            y: 259
             width: 80
             height: 16
             color: "#ffffff"
             text: qsTr("Set Altitude")
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 225
+            anchors.right: parent.right
+            anchors.rightMargin: 0
+            anchors.top: parent.top
+            anchors.topMargin: 259
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
         }
@@ -114,10 +113,13 @@ ApplicationWindow {
         Button {
             id: resetAltitudeButton
             x: 8
-            y: 468
             width: 68
             height: 27
             text: qsTr("Reset")
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.top: parent.top
+            anchors.topMargin: 468
         }
 
         Text {
@@ -191,38 +193,61 @@ ApplicationWindow {
         Button {
             id: setAltitudeButton
             x: 8
-            y: 435
             width: 68
             height: 28
             text: qsTr("Set")
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.top: parent.top
+            anchors.topMargin: 435
+//            onClicked: {
+//                if setAltitudeValue
+//            }
         }
 
         Slider {
             id: setAltitudeBar
             x: 33
-            y: 303
             width: 22
             height: 89
+            anchors.right: parent.right
+            anchors.rightMargin: 29
+            anchors.top: parent.top
+            anchors.topMargin: 303
             orientation: Qt.Vertical
+            value: 0
         }
 
         TextField {
             id: enterAltitudeField
             x: 8
-            y: 403
             width: 68
             height: 26
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.top: parent.top
+            anchors.topMargin: 403
             placeholderText: qsTr("Text Field")
+            validator: IntValidator{bottom: 0; top: 15;}
+            focus: true
+            onAccepted: {
+                setAltitudeValue.text = text
+                setAltitudeBar.value = text
+                HydraPlane.setAltitude(text)
+            }
         }
 
         Text {
             id: setAltitudeValue
             x: 8
-            y: 281
             width: 68
             height: 16
             color: "#ffffff"
-            text: qsTr("0m")
+            text: qsTr("0")
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.top: parent.top
+            anchors.topMargin: 281
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
         }
@@ -230,6 +255,22 @@ ApplicationWindow {
 
 
     }
+
+    Dialog{
+        id: armDialog
+        title: "Are you sure you want to arm?"
+        standardButtons: StandardButton.Ok | StandardButton.Cancel
+        onAccepted: HydraPlane.arm()
+    }
+
+    Dialog{
+        id: takeoffDialog
+        title: "Are you sure you want to takeoff?"
+        standardButtons: StandardButton.Ok | StandardButton.Cancel
+        onAccepted: HydraPlane.takeoff()
+    }
+
+
     Rectangle {
         id: mapRectangle
         color: "#ffffff"
@@ -355,6 +396,7 @@ ApplicationWindow {
             else if(HydraPlane.isArmed() == 1){
                 statusIndicator.color = "green"
             }
+            element5.text = HydraPlane.flightMode()
 
         }
     }
@@ -379,6 +421,7 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 14
+            onClicked: takeoffDialog.open()
         }
 
         Button {
@@ -389,6 +432,7 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 14
+            onClicked: HydraPlane.land()
         }
 
         Button {
@@ -399,7 +443,7 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 14
-            onClicked: HydraPlane.arm()
+            onClicked: armDialog.open()
         }
 
         Button {
@@ -427,6 +471,7 @@ ApplicationWindow {
             x: 500
             y: 15
             text: qsTr("Return Home")
+            onClicked: HydraPlane.return_home()
         }
     }
 
@@ -460,6 +505,29 @@ ApplicationWindow {
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
         }
+
+        Text {
+            id: element3
+            x: 152
+            y: 10
+            width: 105
+            height: 21
+            color: "#ffffff"
+            text: qsTr("FLIGHT MODE:")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+        }
+
+        Text {
+            id: element5
+            x: 270
+            y: 10
+            width: 105
+            height: 21
+            color: "#ffffff"
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+        }
     }
 
 
@@ -473,3 +541,15 @@ Designer {
     D{i:32;anchors_x:105}D{i:31;anchors_height:54;anchors_width:916;anchors_x:0;anchors_y:0}
 }
 ##^##*/
+
+
+
+
+
+
+
+/*##^## Designer {
+    D{i:2;anchors_height:16;anchors_y:259}D{i:3;anchors_y:468}D{i:8;anchors_y:435}D{i:9;anchors_y:303}
+D{i:10;anchors_y:403}D{i:11;anchors_y:281}D{i:1;anchors_x:999}
+}
+ ##^##*/

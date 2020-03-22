@@ -124,10 +124,18 @@ public slots:
         qDebug() << "is armed:";
         qDebug() << is_armed;
 
+        // *********** Gettin flight mode *******************
+        send(socketFD, "flight_mode", 11, 0);
+        memset(buffer, '\0', sizeof(buffer));
+        recv(socketFD, buffer, sizeof(buffer), 0);
+
+        QString flight_mode = buffer;
+
+
 
         qDebug() << "Thread: sending location to master";
 
-        emit resultReady(current_location, altitude, battery, is_armed);
+        emit resultReady(current_location, altitude, battery, is_armed, flight_mode);
 
     }
 //    void setSocketFD(int socketFD){
@@ -137,7 +145,7 @@ private:
 //    int socketFD;
 
 signals:
-    void resultReady(const QGeoCoordinate &result, const double &alt, const double &batt, const int &is_armed);
+    void resultReady(const QGeoCoordinate &result, const double &alt, const double &batt, const int &is_armed, const QString &flight_mod);
 };
 
 
@@ -241,6 +249,18 @@ public:
     Q_INVOKABLE bool isArmed() const{
         return is_armed;
     }
+    Q_INVOKABLE QString flightMode() const{
+        return flight_mode;
+    }
+    Q_INVOKABLE void takeoff(){
+        send(socketFD, "takeoff", 7, 0);
+    }
+    Q_INVOKABLE void land(){
+        send(socketFD, "land", 4, 0);
+    }
+    Q_INVOKABLE void return_home(){
+        send(socketFD, "return", 6, 0);
+    }
 
 //! [C++Pilot2]
 public slots:
@@ -255,12 +275,13 @@ public slots:
         timer.start(15, this);
         emit departed();
     }
-    void updatedCoordinatesSlot(const QGeoCoordinate newCoord, double newAltitude, double newBattery, int is_armed){
+    void updatedCoordinatesSlot(const QGeoCoordinate newCoord, double newAltitude, double newBattery, int is_armed, QString flight_mod){
         updateIsArmed(is_armed);
         updateToCoordinate(newCoord);
         updatePosition();
         updateAltitude(newAltitude);
         updateBattery(newBattery);
+        updateFlightMode(flight_mod);
         operate(socketFD);
     }
 //! [C++Pilot2]
@@ -293,6 +314,10 @@ public slots:
     }
     void updateBattery(double battery){
         batteryVolt = battery;
+    }
+
+    void updateFlightMode(QString flight_mod){
+        this->flight_mode = flight_mod;
     }
     void updateCurrentLocation() {
 
@@ -346,6 +371,7 @@ private:
 
 
 private:
+    QString flight_mode;
     int is_armed;
     double currentAltitude;
     double batteryVolt;

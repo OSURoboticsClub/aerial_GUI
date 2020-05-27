@@ -47,7 +47,7 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-
+// Adapted by Tomas McMonigal
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>

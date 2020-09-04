@@ -185,8 +185,8 @@ ApplicationWindow {
             anchors.topMargin: 67
             anchors.right: parent.right
             anchors.rightMargin: 8
-            minimumValue: 9.5
-            maximumValue: 14
+            minimumValue: 14
+            maximumValue: 17
             tickmarkStepSize: 0.5
         }
 
